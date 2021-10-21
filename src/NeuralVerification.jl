@@ -89,8 +89,9 @@ include("reachability/neurify.jl")
 include("reachability/fastLin.jl")
 include("reachability/fastLip.jl")
 include("reachability/dlv.jl")
+include("reachability/deep_poly.jl")
 export ExactReach, MaxSens, Ai2, Ai2h, Ai2z, Box,
-       ReluVal, Neurify, FastLin, FastLip, DLV
+       ReluVal, Neurify, FastLin, FastLip, DLV, DeepPoly
 
 const TOL = Ref(sqrt(eps()))
 set_tolerance(x::Real) = (TOL[] = x)

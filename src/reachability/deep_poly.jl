@@ -10,8 +10,51 @@ function init_deep_poly_symbolic_interval(domain)
 
     n = dim(domain)
     I = Matrix{Float64}(LinearAlgebra.I(n))
-    Z = zeros(n)
+    Z = zeros(n) # for the constant terms
     return SymbolicInterval([I Z], [I Z], domain)
+end
+
+
+struct LayerNegPos{F<:ActivationFunction, N<:Number}
+    weights::Matrix{N}
+    bias::Vector{N}
+    W_neg::Matrix{N}
+    W_pos::Matrix{N}
+    activation::F
+end
+
+
+LayerNegPos(L::Layer) = LayerNegPos(L.weights, L.bias, min.(L.weights, 0),
+                                    max.(L.weights, 0), L.activation)
+Layer(L::LayerNegPos) = Layer(L.weights, L.bias, L.activation)
+
+n_nodes(L::LayerNegPos) = length(L.bias)
+affine_map(L::LayerNegPos, x) = L.weights*x + L.bias
+
+
+struct NetworkNegPos <: AbstractNetwork
+    layers::Vector{LayerNegPos}
+end
+
+
+NetworkNegPos(net::Network) = NetworkNegPos([LayerNegPos(l) for l in net.layers])
+
+
+function compute_output(nnet::NetworkNegPos, input)
+    curr_value = input
+    for layer in nnet.layers
+        curr_value = layer.activation(affine_map(layer, curr_value))
+    end
+    return curr_value
+end
+
+
+function interval_map(W_neg::AbstractMatrix{N}, W_pos::AbstractMatrix{N},
+                      l::AbstractVecOrMat, u::AbstractVecOrMat) where N
+    l_new = W_pos * l + W_neg * u
+    u_new = W_pos * u + W_neg * l
+
+    return (l_new, u_new)
 end
 
 
@@ -26,7 +69,7 @@ function solve(solver::DeepPoly, problem::Problem)
 end
 
 
-function forward_linear(solver::DeepPoly, L::Layer, input::AbstractHyperrectangle)
+function forward_linear(solver::DeepPoly, L::LayerNegPos, input::AbstractHyperrectangle)
     # as Hyperrectangle is no subtype of SymbolicInterval, we need separate
     # method for the input layer
     domain = init_deep_poly_symbolic_interval(input)
@@ -34,15 +77,16 @@ function forward_linear(solver::DeepPoly, L::Layer, input::AbstractHyperrectangl
 end
 
 
-function forward_linear(solver::DeepPoly, L::Layer, input::SymbolicInterval)
-    output_Low, output_Up = interval_map(L.weights, input.Low, input.Up)
+function forward_linear(solver::DeepPoly, L::LayerNegPos, input::SymbolicInterval)
+    #output_Low, output_Up = interval_map(L.weights, input.Low, input.Up)
+    output_Low, output_Up = interval_map(L.W_neg, L.W_pos, input.Low, input.Up)
     output_Up[:, end] += L.bias
     output_Low[:, end] += L.bias
     return SymbolicInterval(output_Low, output_Up, domain(input))
 end
 
 
-function forward_act(solver::DeepPoly, L::Layer{ReLU}, input::SymbolicInterval)
+function forward_act(solver::DeepPoly, L::LayerNegPos{ReLU}, input::SymbolicInterval)
     n_node = n_nodes(L)
     output_Low, output_Up = copy(input.Low), copy(input.Up)
     los, his = bounds(input)
@@ -74,7 +118,7 @@ function forward_act(solver::DeepPoly, L::Layer{ReLU}, input::SymbolicInterval)
 end
 
 
-function forward_act(solver::DeepPoly, L::Layer{Id}, input::SymbolicInterval)
+function forward_act(solver::DeepPoly, L::LayerNegPos{Id}, input::SymbolicInterval)
     return input
 end
 

@@ -51,8 +51,8 @@ end
 
 function interval_map(W_neg::AbstractMatrix{N}, W_pos::AbstractMatrix{N},
                       l::AbstractVecOrMat, u::AbstractVecOrMat) where N
-    l_new = W_pos * l + W_neg * u
-    u_new = W_pos * u + W_neg * l
+    l_new = W_pos * l .+ W_neg * u
+    u_new = W_pos * u .+ W_neg * l
 
     return (l_new, u_new)
 end
@@ -91,7 +91,7 @@ function forward_act(solver::DeepPoly, L::LayerNegPos{ReLU}, input::SymbolicInte
     output_Low, output_Up = copy(input.Low), copy(input.Up)
     los, his = bounds(input)
 
-    for j in 1:n_node
+    @inbounds for j in 1:n_node
         # up_low, up_up = bounds(upper(input), j)
         # low_low, low_up = bounds(lower(input), j)
 

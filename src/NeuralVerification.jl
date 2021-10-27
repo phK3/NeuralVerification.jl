@@ -13,6 +13,9 @@ using Interpolations # only for PiecewiseLinear
 
 import LazySets: dim, HalfSpace # necessary to avoid conflict with Polyhedra
 
+# only for priority optimization
+import DataStructures: PriorityQueue, Queue, enqueue!, dequeue!
+
 using Requires
 
 abstract type Solver end
@@ -89,9 +92,16 @@ include("reachability/neurify.jl")
 include("reachability/fastLin.jl")
 include("reachability/fastLip.jl")
 include("reachability/dlv.jl")
+
+# added by me
 include("reachability/deep_poly.jl")
+include("reachability/DeepPolyBounds/network_neg_pos_idx.jl")
+include("reachability/DeepPolyBounds/symbolic_interval_bounds.jl")
+include("reachability/DeepPolyBounds/deep_poly_bounds.jl")
+
 export ExactReach, MaxSens, Ai2, Ai2h, Ai2z, Box,
-       ReluVal, Neurify, FastLin, FastLip, DLV, DeepPoly
+       ReluVal, Neurify, FastLin, FastLip, DLV,
+       DeepPoly, DeepPolyBounds
 
 const TOL = Ref(sqrt(eps()))
 set_tolerance(x::Real) = (TOL[] = x)

@@ -15,28 +15,25 @@ function forward_linear(solver::DeepPolyBounds, L::LayerNegPosIdx, input::Symbol
 end
 
 
+function relaxed_relu_gradient_lower(l::Real, u::Real)
+    u <= 0 && return 0.
+    l >= 0 && return 1.
+    u <= -l && return 0
+    return 1.
+end
+
+
 function forward_act(solver::DeepPolyBounds, L::LayerNegPosIdx{ReLU}, input::SymbolicIntervalBounds)
     n = n_nodes(L)
     output_Low, output_Up = copy(input.sym.Low), copy(input.sym.Up)
     los, his = bounds(input.sym, input.lbs[L.index], input.ubs[L.index])
 
-    for j in 1:n
-        low, up = los[j], his[j]
+    slopes = relaxed_relu_gradient.(los, his)
+    output_Up .*= slopes
+    output_Up[:, end] .+= slopes .* max.(-los, 0)
 
-        slope = relaxed_relu_gradient(low, up)
-
-        output_Up[j, :] .*= slope
-        # only -low_low, if ReLU is not fixed
-        output_Up[j, end] += slope * max(-low, 0)
-
-        if up <= 0 || low > 0
-            output_Low[j, :] .*= slope
-        elseif up <= abs(low)
-            output_Low[j, :] .*= 0
-        end
-        # if up_up > abs(low_low) do nothing, since output_Low is already a
-        # copy of input.sym.Low
-    end
+    slopes .= relaxed_relu_gradient_lower.(los, his)
+    output_Low .*= slopes
 
     sym =  SymbolicInterval(output_Low, output_Up, domain(input))
     output = SymbolicIntervalBounds(sym, input.lbs, input.ubs)

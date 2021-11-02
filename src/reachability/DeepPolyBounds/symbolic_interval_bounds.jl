@@ -2,14 +2,17 @@
 
 ############ Symbolic intervals that store intermediate bounds #################
 
-struct SymbolicIntervalBounds{F<:AbstractPolytope, N<:Real}
+# must have fields sym, lbs, ubs
+abstract type AbstractSymbolicIntervalBounds{F<:AbstractPolytope} end
+
+struct SymbolicIntervalBounds{F} <: AbstractSymbolicIntervalBounds{F}
     sym::SymbolicInterval{F}
-    lbs::Vector{Vector{N}}
-    ubs::Vector{Vector{N}}
+    lbs::Vector{Vector{Float64}}
+    ubs::Vector{Vector{Float64}}
 end
 
-domain(s::SymbolicIntervalBounds) = domain(s.sym)
-LazySets.radius(s::SymbolicIntervalBounds) = LazySets.radius(domain(s))
+domain(s::A) where A<:AbstractSymbolicIntervalBounds = domain(s.sym)
+LazySets.radius(s::A) where A<:AbstractSymbolicIntervalBounds = LazySets.radius(domain(s))
 
 function init_symbolic_interval_bounds(network::NetworkNegPosIdx, input::AbstractHyperrectangle)
     sym = init_deep_poly_symbolic_interval(input)
@@ -33,7 +36,7 @@ function bounds(input::SymbolicInterval, lbs::Vector{Float64}, ubs::Vector{Float
 end
 
 # TODO: maybe just calculate upper bound instead of both lower and upper bound and then just returning upper bound
-function LazySets.ρ(d::AbstractArray{T,1} where T, sym::SymbolicIntervalBounds)
+function LazySets.ρ(d::AbstractArray{T,1} where T, sym::A where A<:abstractSymbolicIntervalBounds)
     d_Low, d_Up = interval_map(reshape(d, 1, length(d)), sym.sym.Low, sym.sym.Up)
     sym_prime = SymbolicInterval(d_Low, d_Up, domain(sym))
     lo, up = bounds(sym_prime)
@@ -43,7 +46,7 @@ end
 
 ##### Splitting
 
-function split_symbolic_interval_bounds(s::SymbolicIntervalBounds, index)
+function split_symbolic_interval_bounds(s::SymbolicIntervalBounds{<:Hyperrectangle}, index)
     lbs, ubs = low(domain(s)), high(domain(s))
     split_val = 0.5 * (lbs[index] + ubs[index])
 
@@ -61,7 +64,7 @@ function split_symbolic_interval_bounds(s::SymbolicIntervalBounds, index)
     return [s1, s2]
 end
 
-function split_largest_interval(s::SymbolicIntervalBounds)
+function split_largest_interval(s::SymbolicIntervalBounds{<:Hyperrectangle})
     largest_dimension = argmax(high(domain(s)) - low(domain(s)))
     return split_symbolic_interval_bounds(s, largest_dimension)
 end

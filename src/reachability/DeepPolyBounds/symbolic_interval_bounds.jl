@@ -36,7 +36,7 @@ function bounds(input::SymbolicInterval, lbs::Vector{Float64}, ubs::Vector{Float
 end
 
 # TODO: maybe just calculate upper bound instead of both lower and upper bound and then just returning upper bound
-function LazySets.ρ(d::AbstractArray{T,1} where T, sym::A where A<:abstractSymbolicIntervalBounds)
+function LazySets.ρ(d::AbstractArray{T,1} where T, sym::A where A<:SymbolicIntervalBounds)
     d_Low, d_Up = interval_map(reshape(d, 1, length(d)), sym.sym.Low, sym.sym.Up)
     sym_prime = SymbolicInterval(d_Low, d_Up, domain(sym))
     lo, up = bounds(sym_prime)

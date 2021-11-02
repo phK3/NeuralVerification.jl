@@ -89,25 +89,3 @@ function unit_vec(i, n)
     e_i[i] = 1.
     return e_i
 end
-
-
-function substitute_variables(sym_lo, sym_hi, var_los, var_his, n_in, n_vars)
-    # for sym_lo
-    # should we change the mask to [:, n_in + 1: n_in + n_vars] ???
-    var_terms = sym_lo[:, n_in + 1: end - 1]
-
-    var_terms⁺ = max.(var_terms, 0)
-    var_terms⁻ = min.(var_terms, 0)
-
-    subs_lb = var_terms⁺ * var_los[1:n_vars, :] .+ var_terms⁻ * var_his[1:n_vars, :] .+ sym_lo[:, (1:n_in) ∪ [end]]
-
-    # for sym_hi
-    var_terms .= sym_hi[:, n_in + 1: end - 1]
-
-    var_terms⁺ .= max.(var_terms, 0)
-    var_terms⁻ .= min.(var_terms, 0)
-
-    subs_ub = var_terms⁺ * var_his[1:n_vars, :] .+ var_terms⁻ * var_los[1:n_vars, :] .+ sym_hi[:, (1:n_in) ∪ [end]]
-
-    return subs_lb, subs_ub
-end

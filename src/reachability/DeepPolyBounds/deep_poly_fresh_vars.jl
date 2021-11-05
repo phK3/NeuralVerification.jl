@@ -35,8 +35,8 @@ function forward_act(solver::DeepPolyFreshVars, L::LayerNegPosIdx{ReLU}, input::
 
     n_vars = min(input.max_vars - current_n_vars, floor(Int, solver.var_frac * n_node))
     if n_vars > 0
-        # TODO: replace with fresh_var_largest_range after debugging
-        fv_idxs = fresh_var_first(los, his, n_vars)
+        # fv_idxs = fresh_var_first(los, his, n_vars)
+        fv_idxs = fresh_var_largest_range(los, his, n_vars)
         n_vars = length(fv_idxs)
     end
 
@@ -56,17 +56,10 @@ function forward_act(solver::DeepPolyFreshVars, L::LayerNegPosIdx{ReLU}, input::
     subs_sym_lo .= subs_sym_lo .* relaxed_relu_gradient_lower.(los, his)
 
     if n_vars > 0
-        # TODO: remove after debugging
-        # fv_idxs = fresh_var_first(los, his, n_vars)
-        # n_vars = length(fv_idxs) # there might be many fixed nodes, so we don't need to add as many vars
-        # only if there are new fresh vars
-        # fv_idxs = fresh_var_largest_range(los, his, n_vars)
         for (i, v) in enumerate(fv_idxs)
             # store symbolic bounds on fresh variables
             input.var_los[current_n_vars + i, :] .= subs_sym_lo[v, :]
             input.var_his[current_n_vars + i, :] .= subs_sym_hi[v, :]
-            # input.var_los[current_n_vars + i, :] .= out_Low[v,(1:n_in) ∪ [end]]
-            # input.var_his[current_n_vars + i, :] .= out_Up[v,(1:n_in) ∪ [end]]
 
             # set corresponding entry to unit-vec
             out_Low[v,:] .= unit_vec(n_sym + i, n_sym + 1 + n_vars)

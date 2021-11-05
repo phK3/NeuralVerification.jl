@@ -3,8 +3,9 @@ struct SymbolicIntervalFV{F} <: AbstractSymbolicIntervalBounds{F}
     sym::SymbolicInterval{F}
     lbs::Vector{Vector{Float64}}
     ubs::Vector{Vector{Float64}}
-    var_his::Matrix{Float64} # symbolic upper bounds of fresh vars
     var_los::Matrix{Float64} # symbolic lower bounds of fresh vars
+    var_his::Matrix{Float64} # symbolic upper bounds of fresh vars
+    max_vars::Int64
 end
 
 function init_symbolic_interval_fv(network::NetworkNegPosIdx, input_set; max_vars=10)
@@ -14,7 +15,7 @@ function init_symbolic_interval_fv(network::NetworkNegPosIdx, input_set; max_var
     # symbolic bounds on variables have number of inputs plus constant
     var_his = zeros(max_vars, dim(input_set) + 1)
     var_los = zeros(max_vars, dim(input_set) + 1)
-    return SymbolicIntervalFV(sym, lbs, ubs, var_his, var_los)
+    return SymbolicIntervalFV(sym, lbs, ubs, var_los, var_his, max_vars)
 end
 
 function init_symbolic_interval_fv(s::SymbolicIntervalFV, input_set::AbstractHyperrectangle; max_vars=10)
@@ -23,7 +24,7 @@ function init_symbolic_interval_fv(s::SymbolicIntervalFV, input_set::AbstractHyp
     ubs = [copy(ub) for ub in s.ubs]
     var_his = zeros(max_vars, dim(input_set) + 1)
     var_los = zeros(max_vars, dim(input_set) + 1)
-    return SymbolicIntervalFV(sym, lbs, ubs, var_his, var_los)
+    return SymbolicIntervalFV(sym, lbs, ubs, var_los, var_his, max_vars)
 end
 
 function substitute_variables(sym_lo, sym_hi, var_los, var_his, n_in, n_vars)

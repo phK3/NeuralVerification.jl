@@ -31,9 +31,14 @@ function forward_act(solver::DeepPolyFreshVars, L::LayerNegPosIdx{ReLU}, input::
                                                     n_in, current_n_vars)
     # TODO: write better function for bounds instead of this monstrosity!!!
     tmp_sym = SymbolicInterval(subs_sym_lo, subs_sym_hi, domain(input))
-    los, his = bounds(input.sym, input.lbs[L.index], input.ubs[L.index])
+    los, his = bounds(tmp_sym, input.lbs[L.index], input.ubs[L.index])
 
-    n_vars = min(solver.max_vars - current_n_vars, floor(Int, solver.var_frac * n_node))
+    n_vars = min(input.max_vars - current_n_vars, floor(Int, solver.var_frac * n_node))
+    if n_vars > 0
+        # TODO: replace with fresh_var_largest_range after debugging
+        fv_idxs = fresh_var_first(los, his, n_vars)
+        n_vars = length(fv_idxs)
+    end
 
     out_Low, out_Up = zeros(n_node, n_sym + 1 + n_vars), zeros(n_node, n_sym + 1 + n_vars)
 
@@ -41,15 +46,27 @@ function forward_act(solver::DeepPolyFreshVars, L::LayerNegPosIdx{ReLU}, input::
     out_Up[:, (1:n_sym) ∪ [end]] .= input.sym.Up .* slopes
     out_Up[:, end] .+= slopes .* max.(-los, 0)
 
+    # also apply relaxation to substituted variables
+    subs_sym_hi .= subs_sym_hi .* slopes
+    subs_sym_hi[:, end] .+= slopes .* max.(-los, 0)
+
     out_Low[:, (1:n_sym) ∪ [end]] .= input.sym.Low .* relaxed_relu_gradient_lower.(los, his)
 
+    # also apply relaxation to substituted variables
+    subs_sym_lo .= subs_sym_lo .* relaxed_relu_gradient_lower.(los, his)
+
     if n_vars > 0
+        # TODO: remove after debugging
+        # fv_idxs = fresh_var_first(los, his, n_vars)
+        # n_vars = length(fv_idxs) # there might be many fixed nodes, so we don't need to add as many vars
         # only if there are new fresh vars
-        fv_idxs = fresh_var_largest_range(los, his, n_vars)
+        # fv_idxs = fresh_var_largest_range(los, his, n_vars)
         for (i, v) in enumerate(fv_idxs)
             # store symbolic bounds on fresh variables
-            input.var_los[current_n_vars + i, :] .= out_Low[v,(1:n_in) ∪ [end]]
-            input.var_his[current_n_vars + i, :] .= out_Up[v,(1:n_in) ∪ [end]]
+            input.var_los[current_n_vars + i, :] .= subs_sym_lo[v, :]
+            input.var_his[current_n_vars + i, :] .= subs_sym_hi[v, :]
+            # input.var_los[current_n_vars + i, :] .= out_Low[v,(1:n_in) ∪ [end]]
+            # input.var_his[current_n_vars + i, :] .= out_Up[v,(1:n_in) ∪ [end]]
 
             # set corresponding entry to unit-vec
             out_Low[v,:] .= unit_vec(n_sym + i, n_sym + 1 + n_vars)

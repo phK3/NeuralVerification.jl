@@ -16,7 +16,7 @@ function forward_linear(solver::DeepPolyFreshVars, L::LayerNegPosIdx, input::Sym
     output_Up[:, end] += L.bias
     output_Low[:, end] += L.bias
     sym = SymbolicInterval(output_Low, output_Up, domain(input))
-    return SymbolicIntervalFV(sym, input.lbs, input.ubs, input.var_his, input.var_los)
+    return SymbolicIntervalFV(sym, input.lbs, input.ubs, input.var_los, input.var_his, input.max_vars)
 end
 
 

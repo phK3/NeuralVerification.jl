@@ -83,6 +83,13 @@ function fresh_var_largest_range(lbs::Vector{Float64}, ubs::Vector{Float64}, n::
     return p[1:min(length(p), n)]
 end
 
+# TODO: remove after debugging!!!
+function fresh_var_first(lbs::Vector{Float64}, ubs::Vector{Float64}, n::Int64)
+    crossing_mask = ((lbs .< 0) .& (ubs .> 0))
+    crossing = (1:length(lbs))[crossing_mask]
+    return crossing[1:min(length(crossing), n)]
+end
+
 
 function unit_vec(i, n)
     e_i = zeros(n)

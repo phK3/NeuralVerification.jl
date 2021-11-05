@@ -58,7 +58,7 @@ function forward_act(solver::DeepPolyFreshVars, L::LayerNegPosIdx{ReLU}, input::
     end
 
     sym = SymbolicInterval(out_Low, out_Up, domain(input))
-    output = SymbolicIntervalFV(sym, input.lbs, input.ubs, input.var_los, input.var_his)
+    output = SymbolicIntervalFV(sym, input.lbs, input.ubs, input.var_los, input.var_his, input.max_vars)
     output.lbs[L.index] .= los
     output.ubs[L.index] .= his
     return output

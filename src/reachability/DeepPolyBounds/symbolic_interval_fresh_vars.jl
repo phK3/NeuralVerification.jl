@@ -79,8 +79,8 @@ function split_symbolic_interval_bounds(s::SymbolicIntervalFV{<:Hyperrectangle},
     domain1 = Hyperrectangle(low=lbs, high=high1)
     domain2 = Hyperrectangle(low=low2, high=ubs)
 
-    s1 = init_symbolic_interval_fv(s, domain1)
-    s2 = init_symbolic_interval_fv(s, domain2)
+    s1 = init_symbolic_interval_fv(s, domain1, max_vars=s.max_vars)
+    s2 = init_symbolic_interval_fv(s, domain2, max_vars=s.max_vars)
 
     return [s1, s2]
 end

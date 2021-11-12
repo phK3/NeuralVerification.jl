@@ -77,3 +77,10 @@ end
 function forward_act(solver::DeepPolyHeuristic, L::LayerNegPosIdx{Id}, input::SymbolicIntervalHeur)
     return input
 end
+
+
+# TODO: move to some util file
+function is_crossing(lb::Float64, ub::Float64)
+    lb < 0 && ub > 0 && return true
+    return false
+end

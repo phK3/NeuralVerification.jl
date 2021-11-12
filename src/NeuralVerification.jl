@@ -100,10 +100,13 @@ include("reachability/DeepPolyBounds/symbolic_interval_bounds.jl")
 include("reachability/DeepPolyBounds/symbolic_interval_fresh_vars.jl")
 include("reachability/DeepPolyBounds/deep_poly_bounds.jl")
 include("reachability/DeepPolyBounds/deep_poly_fresh_vars.jl")
+include("reachability/DeepPolyBounds/symbolic_interval_heur.jl")
+include("reachability/DeepPolyBounds/deep_poly_heuristic.jl")
 
 export ExactReach, MaxSens, Ai2, Ai2h, Ai2z, Box,
        ReluVal, Neurify, FastLin, FastLip, DLV,
-       DeepPoly, DeepPolyBounds, DeepPolyFreshVars
+       DeepPoly, DeepPolyBounds, DeepPolyFreshVars,
+       DeepPolyHeuristic
 
 const TOL = Ref(sqrt(eps()))
 set_tolerance(x::Real) = (TOL[] = x)

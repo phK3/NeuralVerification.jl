@@ -34,11 +34,8 @@ function forward_act(solver::DeepPolyHeuristic, L::LayerNegPosIdx{ReLU}, input::
     importance = input.importance .+ layer_importance[1:end-1]  # constant term doesn't need importance
 
     n_vars = min(input.max_vars - current_n_vars, floor(Int, solver.var_frac * n_node))
-    if n_vars > 0
-        # fv_idxs = fresh_var_first(los, his, n_vars)
-        fv_idxs = fresh_var_largest_range(los, his, n_vars)
-        n_vars = length(fv_idxs)
-    end
+    fv_idxs = fresh_var_largest_range(los, his, n_vars)
+    n_vars = length(fv_idxs)
 
     out_Low, out_Up = zeros(n_node, n_sym + 1 + n_vars), zeros(n_node, n_sym + 1 + n_vars)
 
@@ -55,16 +52,14 @@ function forward_act(solver::DeepPolyHeuristic, L::LayerNegPosIdx{ReLU}, input::
     # also apply relaxation to substituted variables
     subs_sym_lo .= subs_sym_lo .* relaxed_relu_gradient_lower.(los, his)
 
-    if n_vars > 0
-        for (i, v) in enumerate(fv_idxs)
-            # store symbolic bounds on fresh variables
-            input.var_los[current_n_vars + i, :] .= subs_sym_lo[v, :]
-            input.var_his[current_n_vars + i, :] .= subs_sym_hi[v, :]
+    for (i, v) in enumerate(fv_idxs)
+        # store symbolic bounds on fresh variables
+        input.var_los[current_n_vars + i, :] .= subs_sym_lo[v, :]
+        input.var_his[current_n_vars + i, :] .= subs_sym_hi[v, :]
 
-            # set corresponding entry to unit-vec
-            out_Low[v,:] .= unit_vec(n_sym + i, n_sym + 1 + n_vars)
-            out_Up[v,:]  .= unit_vec(n_sym + i, n_sym + 1 + n_vars)
-        end
+        # set corresponding entry to unit-vec
+        out_Low[v,:] .= unit_vec(n_sym + i, n_sym + 1 + n_vars)
+        out_Up[v,:]  .= unit_vec(n_sym + i, n_sym + 1 + n_vars)
     end
 
     sym = SymbolicInterval(out_Low, out_Up, domain(input))

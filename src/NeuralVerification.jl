@@ -94,6 +94,7 @@ include("reachability/fastLip.jl")
 include("reachability/dlv.jl")
 
 # added by me
+include("reachability/DeepPolyBounds/utils.jl")
 include("reachability/deep_poly.jl")
 include("reachability/DeepPolyBounds/network_neg_pos_idx.jl")
 include("reachability/DeepPolyBounds/symbolic_interval_bounds.jl")

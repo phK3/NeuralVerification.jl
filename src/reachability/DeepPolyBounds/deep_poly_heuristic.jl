@@ -69,13 +69,32 @@ function forward_act(solver::DeepPolyHeuristic, L::LayerNegPosIdx{ReLU}, input::
     return output
 end
 
+
 function forward_act(solver::DeepPolyHeuristic, L::LayerNegPosIdx{Id}, input::SymbolicIntervalHeur)
+    n_node = n_nodes(L)
+    n_sym = size(input.sym.Low, 2) - 1 # last column is constant term
+    n_in = dim(domain(input))
+    current_n_vars = n_sym - n_in
+
+    subs_sym_lo, subs_sym_hi = substitute_variables(input.sym.Low, input.sym.Up,
+                                                    input.var_los, input.var_his,
+                                                    n_in, current_n_vars)
+    # TODO: write better function for bounds instead of this monstrosity!!!
+    tmp_sym = SymbolicInterval(subs_sym_lo, subs_sym_hi, domain(input))
+    los, his = bounds(tmp_sym, input.lbs[L.index], input.ubs[L.index])
+    
+    sym = SymbolicInterval(input.sym.Low, input.sym.Up, domain(input))
+    output = SymbolicIntervalHeur(sym, input.lbs, input.ubs, input.var_los, input.var_his, input.max_vars, input.importance)
+    output.lbs[end] .= los
+    output.ubs[end] .= his
+    return output
+
     return input
 end
 
 
-# TODO: move to some util file
-function is_crossing(lb::Float64, ub::Float64)
-    lb < 0 && ub > 0 && return true
-    return false
+function get_fresh_var_idxs_largest_range(max_vars, current_n_vars, los, his, var_frac)
+    n_node = length(los)
+    n_vars = min(max_vars - current_n_vars, floor(Int, var_frac * n_node))
+    return fresh_var_largest_range(los, his, n_vars)
 end

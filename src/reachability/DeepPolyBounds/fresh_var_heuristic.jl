@@ -1,0 +1,116 @@
+
+struct FreshVarHeuristic end
+
+struct HeuristicScore
+    # represents utilization factor for symbolic lower bounds in the layers
+    lowers::Vector{Float64}
+    # represents utilization factor for symbolic upper bounds in the layers
+    uppers::Vector{Float64}
+end
+
+function backward_linear(solver::FreshVarHeuristic, L::Layer, input::HeuristicScore)
+    W⁺ = max.(0., L.weights')
+    W⁻ = abs.(min.(0., L.weights'))
+    lowers = W⁺ * input.lowers + W⁻ * input.uppers
+    uppers = W⁺ * input.uppers + W⁻ * input.lowers
+    return HeuristicScore(lowers, uppers)
+end
+
+function backward_act(solver::FreshVarHeuristic, L::Layer{ReLU}, input, lbs, ubs)
+    λ_l = relaxed_relu_gradient_lower.(lbs, ubs)
+    λ_u = relaxed_relu_gradient.(lbs, ubs)
+
+    lowers = λ_l .* input.lowers
+    uppers = λ_u .* input.uppers
+    return HeuristicScore(lowers, uppers)
+end
+
+function backward_act(solver::FreshVarHeuristic, L::Layer{Id}, input, lbs, ubs)
+    return input
+end
+
+"""
+Calculates factors for usage of node's lower and upper bound later on in the network.
+
+input (HeuristicScore) - lower and upper bound usage factors of the output nodes
+
+pre_activation (bool) - whether to return factors for the pre-activation values of a neuron
+post_activation (bool) - whether to return factors for the post-activation values of a neuron
+"""
+function backward_network(solver::FreshVarHeuristic, net, lbs, ubs, input; pre_activation=true, post_activation=true)
+    scores = []
+
+    Z = backward_linear(solver, net.layers[end], input)
+    post_activation && push!(scores, Z)
+
+    for i in reverse(2:length(net.layers)-1)
+        layer = net.layers[i]
+        Ẑ = backward_act(solver, layer, Z, lbs[i], ubs[i])
+        Z = backward_linear(solver, layer, Ẑ)
+
+        pre_activation && push!(scores, Ẑ)
+        post_activation && push!(scores, Z)
+    end
+
+    # we iterated backwards through the NN, but want scores forward
+    return reverse(scores)
+end
+
+
+function cancellation_score(l, u)
+    M = max(l, u)
+    m = min(l, u)
+
+    return M == 0. ? 0. : m / M
+end
+
+# Methods for calculating amount of overapproximation of nodes
+
+abstract type OverapproxCalculator end
+
+struct AreaCalculator end
+struct RangeCalculator end
+struct OneSideBound end
+struct SplitAreaCalculator end
+
+
+function calc_overapprox(method::AreaCalculator, l, u)
+    l >= 0 && return 0.
+    u <= 0 && return 0.
+    upper_area = 0.5*(-l)*u
+    if u > -l
+        lower_area = 0.5*l*l
+    else
+        lower_area = 0.5*u*u
+    end
+
+    return upper_area + lower_area
+end
+
+
+function calc_overapprox(method::SplitAreaCalculator, l, u)
+    l >= 0 && return 0., 0.
+    u <= 0 && return 0., 0.
+    upper_area = 0.5*(-l)*u
+    if u > -l
+        lower_area = 0.5*l*l
+    else
+        lower_area = 0.5*u*u
+    end
+
+    return upper_area, lower_area
+end
+
+
+function calc_overapprox(method::RangeCalculator, l, u)
+    l >= 0 && return 0
+    u <= 0 && return 0
+    return u - l
+end
+
+
+function calc_overapprox(method::OneSideBound, l, u)
+    l >= 0 && return 0
+    u <= 0 && return 0
+    return min(-l, u)
+end

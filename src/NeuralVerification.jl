@@ -105,12 +105,14 @@ include("reachability/DeepPolyBounds/symbolic_interval_heur.jl")
 include("reachability/DeepPolyBounds/deep_poly_heuristic.jl")
 include("reachability/CROWN/crown.jl")
 include("reachability/DeepPolyBounds/fresh_var_heuristic.jl")
+include("reachability/AsymESIP/asym_esip.jl")
+include("reachability/AsymESIP/esip_solver.jl")
 
 
 export ExactReach, MaxSens, Ai2, Ai2h, Ai2z, Box,
        ReluVal, Neurify, FastLin, FastLip, DLV,
        DeepPoly, DeepPolyBounds, DeepPolyFreshVars,
-       DeepPolyHeuristic, CROWN, backward_network, calc_bounds
+       DeepPolyHeuristic, CROWN, backward_network, calc_bounds, ESIPSolver
 
 const TOL = Ref(sqrt(eps()))
 set_tolerance(x::Real) = (TOL[] = x)

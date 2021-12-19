@@ -25,7 +25,8 @@ function forward_act(solver::ESIPSolver, L::Layer{ReLU}, input::AsymESIP)
     eq_u = λ_u .* input.equation
     eq_u[:, end] .+= λ_u .* max.(-lbs, 0.)
 
-    error = eq_u - eq + (λ_u - λ_l) .* max.(0, input.factors) * input.errors
+    # error = eq_u - eq + (λ_u - λ_l) .* max.(0, input.factors) * input.errors
+    error = eq_u - eq + max.(0, (λ_u - λ_l) .* input.factors) * input.errors
 
     factors = λ_l .* input.factors
     factors = [factors partial_I(factors, crossing_idxs)]

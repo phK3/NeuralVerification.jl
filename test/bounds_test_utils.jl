@@ -66,7 +66,7 @@ Checks bounds randomly by generating input set with specified width, calculating
 bounds for it according to the generate_bounds function and then sampling from the
 input set.
 """
-function check_random_bounds(nnet, width, generate_bounds; n=100, n_rand=100, ϵ_tol=1e-10)
+function check_random_bounds(nnet, width, generate_bounds; n=100, n_rand=100, ϵ_tol=1e-10, print_individual_tests=true)
     @assert generate_bounds != nothing
     dim = size(nnet.layers[1].weights, 2)
     counter_examples = []
@@ -78,7 +78,7 @@ function check_random_bounds(nnet, width, generate_bounds; n=100, n_rand=100, ϵ
 
         lbs, ubs = generate_bounds(input_set)
 
-        input_counters = check_bounds(nnet, input_set, lbs, ubs, n=n, ϵ_tol=ϵ_tol)
+        input_counters = check_bounds(nnet, input_set, lbs, ubs, n=n, ϵ_tol=ϵ_tol, print_success=print_individual_tests)
         if length(input_counters) > 0
             push!(counter_examples, input_counters)
         end
@@ -150,4 +150,50 @@ function create_random_network(layer_dims::Vector{Int64})
     end
 
     return Network(layers)
+end
+
+
+function generate_nice_random_input_set(nnet, width; possible_vals=nothing)
+    possible_vals = isnothing(possible_vals) ? (-1.:1.) : possible_vals
+
+    dim = size(nnet.layers[1].weights, 2)
+    low = rand(possible_vals, dim)
+    high = low .+ width
+    return Hyperrectangle(low=low, high=high)
+end
+
+
+function generate_counterexample_nn(width, generate_bounds; layer_range=nothing, layer_width_range=nothing,
+                                    n_nns=100, n_sample=100, n_in=2, n_out=1)
+
+    layer_range = isnothing(layer_range) ? (1:10) : layer_range
+    layer_width_range = isnothing(layer_width_range) ? (2:2) : layer_width_range
+
+    counter_nets = []
+    counters = []
+    input_sets = []
+
+    for hl in layer_range
+        # number of hidden layers with 2 neurons +1 for input layer +1 for output layer
+        layers = rand(layer_width_range, hl+2)
+        layers[1] = n_in
+        layers[end] = n_out
+
+        for n_nn in 1:n_nns
+            net = create_nice_random_network(layers)
+            input_set = generate_nice_random_input_set(net, 0.1)
+            lbs, ubs = generate_bounds(net, input_set)
+
+            counters_current = check_bounds(net, input_set, lbs, ubs, n=n_sample, print_success=false)
+
+            if length(counters_current) > 0
+                println("Found counterexample with ", length(layers)-1, " layers!")
+                push!(counter_nets, net)
+                push!(counters, counters_current)
+                push!(input_sets, input_set)
+            end
+        end
+    end
+
+    return counter_nets, counters, input_sets
 end

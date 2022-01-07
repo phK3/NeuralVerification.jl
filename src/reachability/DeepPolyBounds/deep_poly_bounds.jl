@@ -16,11 +16,18 @@ end
 
 
 function relaxed_relu_gradient_lower(l::Real, u::Real)
+    ((u <= 0) || ((l < 0) && (u <= -l))) && return 0.
+    return 1.
+end
+
+""" Old implementation, ~4x slower
+function relaxed_relu_gradient_lower(l::Real, u::Real)
     u <= 0 && return 0.
     l >= 0 && return 1.
     u <= -l && return 0
     return 1.
 end
+"""
 
 
 function forward_act(solver::DeepPolyBounds, L::LayerNegPosIdx{ReLU}, input::SymbolicIntervalBounds)

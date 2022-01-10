@@ -46,8 +46,8 @@ end
 
 ##### Splitting
 
-function split_symbolic_interval_bounds(s::SymbolicIntervalBounds{<:Hyperrectangle}, index)
-    lbs, ubs = low(domain(s)), high(domain(s))
+function Base.split(H::AbstractHyperrectangle, index::Int)
+    lbs, ubs = low(H), high(H)
     split_val = 0.5 * (lbs[index] + ubs[index])
 
     high1 = copy(ubs)
@@ -57,6 +57,13 @@ function split_symbolic_interval_bounds(s::SymbolicIntervalBounds{<:Hyperrectang
 
     domain1 = Hyperrectangle(low=lbs, high=high1)
     domain2 = Hyperrectangle(low=low2, high=ubs)
+
+    return domain1, domain2
+end
+
+
+function split_symbolic_interval_bounds(s::SymbolicIntervalBounds{<:Hyperrectangle}, index::Int)
+    domain1, domain2 = split(domain(s), index)
 
     s1 = init_symbolic_interval_bounds(s, domain1)
     s2 = init_symbolic_interval_bounds(s, domain2)

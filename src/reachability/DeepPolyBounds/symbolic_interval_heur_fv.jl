@@ -18,7 +18,9 @@ end
 domain(s::SymbolicIntervalFVHeur) = s.domain
 # TODO: should we change this definition? It's not really the radius of the
 # symbolic interval, but we need the radius of the domain during splitting
-LazySets.radius(s::SymbolicIntervalFVHeur) = radius(domain(s))
+# ALSO: Why do we need LazySets.radius(domain(s)) for NeuralPriorityOptimizer to
+# work, why is it not enough to just write radius(domain(s)) ?
+LazySets.radius(s::SymbolicIntervalFVHeur) = LazySets.radius(domain(s))
 LazySets.dim(s::SymbolicIntervalFVHeur) = size(s.Up, 1)
 
 get_n_sym(s::SymbolicIntervalFVHeur) = size(s.Low, 2) - 1  # number of current symbolic vars

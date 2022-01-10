@@ -76,6 +76,7 @@ function split_largest_interval(s::SymbolicIntervalBounds{<:Hyperrectangle})
     return split_symbolic_interval_bounds(s, largest_dimension)
 end
 
+"""
 function split_multiple_times(cell::SymbolicIntervalBounds, n; split=split_largest_interval)
     q = Queue{SymbolicIntervalBounds}()
     enqueue!(q, cell)
@@ -86,3 +87,4 @@ function split_multiple_times(cell::SymbolicIntervalBounds, n; split=split_large
     end
     return q
 end
+"""

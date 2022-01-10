@@ -55,6 +55,18 @@ function LazySets.ρ(d::AbstractArray{T,1} where T, sym::A where A<:SymbolicInte
     return up[1]
 end
 
+
+# TODO: factor out into some utils file, don't want to have SymbolicIntervalFV function here
+function maximizer(s::Union{SymbolicIntervalHeur, SymbolicIntervalFV})
+    n_sym = size(s.sym.Low, 2) - 1
+    n_in = dim(domain(s))
+    current_n_vars = n_sym - n_in
+
+    subs_sym_lo, subs_sym_hi = substitute_variables(s.sym.Low, s.sym.Up, s.var_los, s.var_his, n_in, current_n_vars)
+
+    return maximizer(subs_sym_hi, low(domain(s)), high(domain(s)))
+end
+
 ######### Splitting
 
 function split_symbolic_interval_bounds(s::SymbolicIntervalHeur{<:Hyperrectangle}, index::Int64)

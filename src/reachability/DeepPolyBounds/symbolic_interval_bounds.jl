@@ -44,6 +44,29 @@ function LazySets.ρ(d::AbstractArray{T,1} where T, sym::A where A<:SymbolicInte
     return up[1]
 end
 
+
+"""
+Calculates an input within the hyperrectangle [lbs, ubs] that maximizes the linear
+symbolic equation sym_eq.
+"""
+function maximizer(sym_eq, lbs, ubs)
+    if size(sym_eq, 1) == 1
+        W⁺ = (sym_eq[1:end-1] .> 0)
+        W⁻ = (sym_eq[1:end-1] .< 0)
+        maximizer = W⁺ .* ubs + W⁻ .* lbs
+    else
+        W⁺ = (sym_eq[:, 1:end-1] .> 0)
+        W⁻ = (sym_eq[:, 1:end-1] .< 0)
+        maximizer =( W⁺' .* ubs + W⁻' .* lbs)'
+    end
+
+    return maximizer
+end
+
+function maximizer(s::S) where S <: AbstractSymbolicIntervalBounds
+    maximizer(s.sym.Up, low(domain(s)), high(domain(s)))
+end
+
 ##### Splitting
 
 function Base.split(H::AbstractHyperrectangle, index::Int)

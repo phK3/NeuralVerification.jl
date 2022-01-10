@@ -117,6 +117,17 @@ function init_symbolic_interval_fvheur(s::SymbolicIntervalFVHeur, Low::Matrix{N}
 end
 
 
+function maximizer(s::SymbolicIntervalFVHeur)
+    n_sym = get_n_sym(s)
+    n_in = get_n_in(s)
+    current_n_vars = get_n_vars(s)
+
+    subs_sym_lo, subs_sym_hi = substitute_variables(s.Low, s.Up, s.var_los, s.var_his, n_in, current_n_vars)
+
+    return maximizer(subs_sym_hi, low(domain(s)), high(domain(s)))
+end
+
+
 
 function split_symbolic_interval_fv_heur(s::SymbolicIntervalFVHeur{<:Hyperrectangle}, index::Int)
     domain1, domain2 = split(domain(s), index)

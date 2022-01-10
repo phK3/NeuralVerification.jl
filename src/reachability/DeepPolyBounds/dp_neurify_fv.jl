@@ -96,7 +96,7 @@ function forward_act(solver::DPNeurifyFV, L::LayerNegPosIdx{ReLU}, input::Symbol
 end
 
 
-function forward_act(solver::DPNeurifyFV, L::LayerNegPosIdx{Id}, input::SymbolicIntervalFVHeur))
+function forward_act(solver::DPNeurifyFV, L::LayerNegPosIdx{Id}, input::SymbolicIntervalFVHeur)
     n_node = n_nodes(L)
     n_sym = get_n_sym(input)
     n_in = get_n_in(input)

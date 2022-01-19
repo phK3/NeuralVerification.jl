@@ -2,6 +2,8 @@
 @with_kw struct DeepPolyHeuristic <: Solver
     max_vars::Int64 = 10
     var_frac::Float64 = 0.5
+    # switch to hard coded function later, variable function is slow performance wise
+    get_fresh_var_idxs = get_fresh_var_idxs_largest_range
 end
 
 
@@ -33,8 +35,9 @@ function forward_act(solver::DeepPolyHeuristic, L::LayerNegPosIdx{ReLU}, input::
     layer_importance = sum(abs.(subs_sym_lo[crossing, :]), dims=1) .+ sum(abs.(subs_sym_hi[crossing, :]), dims=1)
     importance = input.importance .+ layer_importance[1:end-1]  # constant term doesn't need importance
 
-    n_vars = min(input.max_vars - current_n_vars, floor(Int, solver.var_frac * n_node))
-    fv_idxs = fresh_var_largest_range(los, his, n_vars)
+    fv_idxs = solver.get_fresh_var_idxs(input.max_vars, current_n_vars, los, his, solver.var_frac)
+    #n_vars = min(input.max_vars - current_n_vars, floor(Int, solver.var_frac * n_node))
+    #fv_idxs = fresh_var_largest_range(los, his, n_vars)
     n_vars = length(fv_idxs)
 
     out_Low, out_Up = zeros(n_node, n_sym + 1 + n_vars), zeros(n_node, n_sym + 1 + n_vars)

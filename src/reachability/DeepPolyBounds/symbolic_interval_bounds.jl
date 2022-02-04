@@ -63,8 +63,17 @@ function maximizer(sym_eq, lbs, ubs)
     return maximizer
 end
 
+function minimizer(sym_eq, lbs, ubs)
+    # minimizer of eq is just maximizer of -eq
+    return maximizer(-sym_eq, lbs, ubs)
+end
+
 function maximizer(s::S) where S <: AbstractSymbolicIntervalBounds
     maximizer(s.sym.Up, low(domain(s)), high(domain(s)))
+end
+
+function minimizer(s::S) where S <: AbstractSymbolicIntervalBounds
+    minimizer(s.sym.Low, low(domain(s)), high(domain(s)))
 end
 
 ##### Splitting

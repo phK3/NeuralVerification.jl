@@ -39,8 +39,15 @@ function forward_act(solver::DPNeurifyFV, L::LayerNegPosIdx{ReLU}, input::Symbol
     layer_importance = sum(abs.(subs_Low_Low[crossing, :]), dims=1) .+ sum(abs.(subs_Up_Up[crossing, :]), dims=1)
     importance = input.importance .+ layer_importance[1:end-1]  # constant term doesn't need importance
 
-    fv_idxs = solver.get_fresh_var_idxs(input.max_vars, current_n_vars, low_low, up_up, solver.var_frac)
-    n_vars = length(fv_idxs)
+    if L.index >= input.n_layers - 1
+        # introducing fresh variables in the next to last layer doesn't improve
+        # bounds, as there is no opportunity for them to cancel out
+        fv_idxs = []
+        n_vars = 0
+    else
+        fv_idxs = solver.get_fresh_var_idxs(input.max_vars, current_n_vars, low_low, up_up, solver.var_frac)
+        n_vars = length(fv_idxs)
+    end
 
     if solver.method == :OuterBounds
         λ_l = relaxed_relu_gradient_lower.(low_low, up_up)

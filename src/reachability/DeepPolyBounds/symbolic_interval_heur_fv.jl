@@ -142,8 +142,10 @@ end
 function split_symbolic_interval_fv_heur(s::SymbolicIntervalFVHeur{<:Hyperrectangle}, index::Int)
     domain1, domain2 = split(domain(s), index)
 
-    s1 = init_symbolic_interval_fvheur(s, domain1; max_vars=s.max_vars)
-    s2 = init_symbolic_interval_fvheur(s, domain2; max_vars=s.max_vars)
+    current_n_vars = get_n_vars(s)
+    # can't have more vars than parent node?
+    s1 = init_symbolic_interval_fvheur(s, domain1; max_vars=current_n_vars)
+    s2 = init_symbolic_interval_fvheur(s, domain2; max_vars=current_n_vars)
 
     return [s1, s2]
 end

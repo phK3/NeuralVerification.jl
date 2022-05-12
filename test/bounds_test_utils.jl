@@ -1,4 +1,6 @@
 
+using NeuralVerification
+const NV = NeuralVerification
 
 """
 Samples a point in the hyperrectangle [los, his] uniformly at random.
@@ -19,7 +21,7 @@ function compute_values(nnet, input; collect_f=last)
     collected = [elem]
 
     for layer in nnet.layers
-        x̂ = affine_map(layer, x)
+        x̂ = NV.affine_map(layer, x)
         x = layer.activation(x̂)
         push!(collected, collect_f((x̂, x)))
     end

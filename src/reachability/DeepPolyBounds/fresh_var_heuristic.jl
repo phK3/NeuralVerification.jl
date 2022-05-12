@@ -130,7 +130,7 @@ function fresh_var_range_non_zero(max_vars, current_n_vars, los, his, var_frac)
     n_node = length(los)
     n_fixed_zero = sum(his .<= 0)
     n_node = n_node - n_fixed_zero  # fixed zero nodes are basically non-existent in the nn
-    n_vars = min(max_vars - current_n_vars, floor(Int, var_frac * n_node))
+    n_vars = min(max_vars - current_n_vars, ceil(Int, var_frac * n_node))
     return fresh_var_largest_range(los, his, n_vars)
 end
 
@@ -141,7 +141,7 @@ function fresh_var_n_vars_non_zero(max_vars, current_n_vars, los, his, var_frac)
     n_node = n_node - n_fixed_zero  # fixed zero nodes are basically non-existent in the nn
 
     λ = n_node / (current_n_vars + n_node)
-    n_vars = min(max_vars - current_n_vars, floor(Int, var_frac * λ * n_node))
+    n_vars = min(max_vars - current_n_vars, ceil(Int, var_frac * λ * n_node))
 
     ranges = his - los
 

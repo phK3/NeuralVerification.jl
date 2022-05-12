@@ -1,6 +1,8 @@
 
 
-struct CROWN <: Solver end
+@with_kw struct CROWN <: Solver
+    method = :DeepPolyRelax  # alternative is :ParallelRelax
+end
 
 
 struct SymbolicBound
@@ -22,11 +24,18 @@ function backward_act(solver::CROWN, L::Layer{ReLU}, input::SymbolicBound, lbs, 
     Λ⁺ = max.(flip * input.Λ, 0)
     Λ⁻ = min.(flip * input.Λ, 0)
 
-    λ_l = relaxed_relu_gradient_lower.(lbs, ubs)
-    λ_u = relaxed_relu_gradient.(lbs, ubs)
+    if solver.method == :DeepPolyRelax
+        λ_l = relaxed_relu_gradient_lower.(lbs, ubs)
+        λ_u = relaxed_relu_gradient.(lbs, ubs)
+    elseif solver.method == :ParallelRelax
+        λ_l = relaxed_relu_gradient.(lbs, ubs)
+        λ_u = λ_l
+    else
+        throw(ArgumentError("Don't know relaxation method $(solver.method)!"))
+    end
 
     β_l = zero(lbs)
-    β_u = λ_u .* max.(-lbs, 0)
+    β_u = λ_u .* max.(-lbs, 0)    
 
     Λ = flip * (Λ⁻ .* λ_u' + Λ⁺ .* λ_l')
     γ = flip * (Λ⁻ * β_u + Λ⁺ * β_l) .+ input.γ

@@ -139,6 +139,31 @@ function minimizer(s::SymbolicIntervalFVHeur)
     return minimizer(subs_sym_lo, low(domain(s)), high(domain(s)))
 end
 
+
+"""
+Returns number of crossing ReLUs in the network as well as a list
+of crossing ReLUs per layer.
+
+lbs, ubs are lower and upper bounds of the intermediate neurons
+(no input bounds or output bounds)
+"""
+function get_num_crossing(lbs, ubs)
+    n_layers = length(lbs)
+    n_crossings = zeros(Int, n_layers)
+    for (i, (l, u)) in enumerate(zip(lbs, ubs))
+        n_crossings[i] = sum((l .< 0) .& (u .> 0))
+    end
+
+    return sum(n_crossings), n_crossings
+end
+
+get_num_crossing(s::SymbolicIntervalFVHeur) = get_num_crossing(s.lbs, s.ubs)
+
+
+###############################################################################
+#### Splitting
+###############################################################################
+
 function split_symbolic_interval_fv_heur(s::SymbolicIntervalFVHeur{<:Hyperrectangle}, index::Int)
     domain1, domain2 = split(domain(s), index)
 
@@ -160,6 +185,55 @@ function split_important_interval(s::SymbolicIntervalFVHeur{<:Hyperrectangle})
     # multiply it with radius, all inputs are equally important, and argmax always
     # returns the first index -> infinitely loop splitting
     most_important_dim = sum(s.importance) == 0. ? argmax(radius) : argmax(s.importance .* radius)
+    return split_symbolic_interval_fv_heur(s, most_important_dim)
+end
+
+
+"""
+Splitting based on intermediate importance scores (i.e. coefficients in all crossing ReLUs) with number of fresh variables to
+be introduced following NeuroDiff paper
+"""
+function split_important_interval_neurodiff(s::SymbolicIntervalFVHeur{<:Hyperrectangle})
+    radius = high(domain(s)) - low(domain(s))
+    # if there are no more crossing ReLUs, importance will be zero vector -> if we
+    # multiply it with radius, all inputs are equally important, and argmax always
+    # returns the first index -> infinitely loop splitting
+    most_important_dim = sum(s.importance) == 0. ? argmax(radius) : argmax(s.importance .* radius)
+
+    domain1, domain2 = split(domain(s), most_important_dim)
+
+    num_crossing, crossings = get_num_crossing(s)
+    # don't count last layer as it has Id activation function
+    n_vars = ceil(Integer, sum([ncr/i for (i, ncr) in enumerate(crossings[1:end-1])]))
+
+    s1 = init_symbolic_interval_fvheur(s, domain1; max_vars=n_vars)
+    s2 = init_symbolic_interval_fvheur(s, domain2; max_vars=n_vars)
+
+    return [s1, s2]
+end
+
+
+
+"""
+Splitting based on intermediate importance scores (i.e. coefficients in all crossing ReLUs)
+but taking output layer into consideration.
+"""
+function split_important_interval_output(s::SymbolicIntervalFVHeur{<:Hyperrectangle})
+    radius = high(domain(s)) - low(domain(s))
+
+    subs_Low_Low, subs_Up_Up = substitute_variables(s.Low, s.Up, s.var_los, s.var_his, get_n_in(s), get_n_vars(s))
+    subs_Up_Low, subs_Low_Up = substitute_variables(s.Up, s.Low, s.var_los, s.var_his, get_n_in(s), get_n_vars(s))
+    output_importance = sum(abs.(subs_Low_Low), dims=1) .+ sum(abs.(subs_Up_Up), dims=1)
+
+    num_crossing, crossings = get_num_crossing(s)
+    in_importance = s.importance ./ sum(s.importance)
+    out_importance = output_importance[1:end-1] ./ sum(output_importance[1:end-1])
+    importance = num_crossing .* in_importance .+ out_importance
+
+    # if there are no more crossing ReLUs, importance will be zero vector -> if we
+    # multiply it with radius, all inputs are equally important, and argmax always
+    # returns the first index -> infinitely loop splitting
+    most_important_dim = sum(importance) == 0. ? argmax(radius) : argmax(importance .* radius)
     return split_symbolic_interval_fv_heur(s, most_important_dim)
 end
 

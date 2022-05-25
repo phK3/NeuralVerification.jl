@@ -298,45 +298,7 @@ Only calculation of support vector is expensive, the maximum can be cheaply calc
 """
 function LazySets.σ(a::AbstractVector, sym::SymbolicIntervalFVHeur{<:Hyperrectangle})
     n_sym = size(sym.Low, 2) - 1
-    n_in = dim(domain(sym))
-    current_n_vars = n_sym - n_in
-
-    # TODO: just use constraints_list
-
-    hList = HalfSpace[]
-
-    hdim = n_sym + dim(sym)  # need variables for all vars in the symbolic bounds as well as for the current neurons
-
-    # constraints for Box inputs
-    for i in 1:n_in
-        x_current = zeros(hdim)
-        x_current[i] = 1.
-        push!(hList, HalfSpace(-x_current, -low(sym.domain, i)))
-        push!(hList, HalfSpace(x_current, high(sym.domain, i)))
-    end
-
-    # constraints for symbolic upper and lower bounds of current neurons (with fresh vars)
-    for i in 1:dim(sym)
-        # Lower bounds to halfspaces
-        x_current = zeros(dim(sym))
-        x_current[i] = 1.
-        push!(hList, HalfSpace([sym.Low[i, 1:end-1]; -x_current], -sym.Low[i, end]))
-
-        # Upper bounds to halfspaces
-        push!(hList, HalfSpace([-sym.Up[i, 1:end-1]; x_current], sym.Up[i, end]))
-    end
-
-
-    # constraints for fresh vars
-    for i in 1:current_n_vars
-        x_current = zeros(current_n_vars + dim(sym))  # first n_in positions will be held by input variables,
-                                                      # then fresh variables, then current neurons.
-                                                      # input variables are already in sym.var_los/var_his
-        x_current[i] = 1.
-
-        push!(hList, HalfSpace([sym.var_los[i, 1:end-1]; -x_current], -sym.var_los[i, end]))
-        push!(hList, HalfSpace([-sym.var_his[i, 1:end-1]; x_current], sym.var_his[i, end]))
-    end
+    hlist = constraints_list(sym)
 
     HP = HPolytope(hList)
     # since we aren't interested in values of other variables than the current neurons their influence is zero

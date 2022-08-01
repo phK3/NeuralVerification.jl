@@ -35,3 +35,23 @@ Returns the number of neurons in a layer.
 """
 n_nodes(L::Layer) = length(L.bias)
 
+
+
+
+"""
+Reads .onnx network from file.
+
+Only fully connected ReLU networks are supported!
+"""
+function read_onnx_network(network_file)
+    ws, bs = load_network(network_file)
+
+    layers = []
+    for (W, b) in zip(ws[1:end-1], bs[1:end-1])
+        push!(layers, Layer(Float64.(W), b, ReLU()))
+    end
+
+    push!(layers, Layer(Float64.(ws[end]), bs[end], Id()))
+
+    return Network(layers)
+end

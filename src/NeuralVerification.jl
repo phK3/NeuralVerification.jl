@@ -16,6 +16,8 @@ import LazySets: dim, HalfSpace # necessary to avoid conflict with Polyhedra
 # only for priority optimization
 #import DataStructures: PriorityQueue, Queue, enqueue!, dequeue!
 
+using OnnxReader
+
 using Requires
 
 abstract type Solver end
@@ -116,7 +118,7 @@ export ExactReach, MaxSens, Ai2, Ai2h, Ai2z, Box,
        ReluVal, Neurify, FastLin, FastLip, DLV,
        DeepPoly, DeepPolyBounds, DeepPolyFreshVars,
        DeepPolyHeuristic, CROWN, backward_network, calc_bounds, ESIPSolver,
-       DPNeurifyFV, DPNeurifyZono
+       DPNeurifyFV, DPNeurifyZono, read_onnx_network
 
 const TOL = Ref(sqrt(eps()))
 set_tolerance(x::Real) = (TOL[] = x)

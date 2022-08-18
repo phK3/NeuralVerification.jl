@@ -43,8 +43,8 @@ Reads .onnx network from file.
 
 Only fully connected ReLU networks are supported!
 """
-function read_onnx_network(network_file)
-    ws, bs = load_network(network_file)
+function read_onnx_network(network_file; dtype=AbstractFloat)
+    ws, bs = load_network(network_file, dtype=dtype)
 
     layers = []
     for (W, b) in zip(ws[1:end-1], bs[1:end-1])

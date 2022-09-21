@@ -298,7 +298,7 @@ Only calculation of support vector is expensive, the maximum can be cheaply calc
 """
 function LazySets.σ(a::AbstractVector, sym::SymbolicIntervalFVHeur{<:Hyperrectangle})
     n_sym = size(sym.Low, 2) - 1
-    hlist = constraints_list(sym)
+    hList = constraints_list(sym)
 
     HP = HPolytope(hList)
     # since we aren't interested in values of other variables than the current neurons their influence is zero

@@ -46,7 +46,8 @@ Only fully connected ReLU networks are supported!
 function read_onnx_network(network_file; dtype=AbstractFloat)
     ws, bs = load_network(network_file, dtype=dtype)
 
-    layers = []
+    # can we just use dtype instead of eltype(eltype(ws)) ?
+    layers = Vector{Layer{<:ActivationFunction,eltype(eltype(ws))}}()
     for (W, b) in zip(ws[1:end-1], bs[1:end-1])
         push!(layers, Layer(Float64.(W), b, ReLU()))
     end

@@ -1,4 +1,4 @@
-abstract type AbstractNetwork end
+abstract type AbstractNetwork{N<:Number} end
 
 """
     Layer{F, N}
@@ -24,8 +24,8 @@ A Vector of layers.
 
 See also: [`Layer`](@ref)
 """
-struct Network <: AbstractNetwork
-    layers::Vector{Layer} # layers includes output layer
+struct Network{N<:Number, V<:Vector{<:Layer{<:ActivationFunction, N}}} <: AbstractNetwork{N}
+    layers::V # layers includes output layer
 end
 
 """

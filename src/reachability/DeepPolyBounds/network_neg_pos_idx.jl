@@ -16,8 +16,8 @@ n_nodes(L::LayerNegPosIdx) = length(L.bias)
 affine_map(L::LayerNegPosIdx, x)  = L.weights*x .+ L.bias
 
 
-struct NetworkNegPosIdx <: AbstractNetwork
-    layers::Vector{LayerNegPosIdx}
+struct NetworkNegPosIdx{N<:Number, V<:Vector{<:LayerNegPosIdx{<:ActivationFunction, N}}} <: AbstractNetwork{N}
+    layers::V
 end
 
 NetworkNegPosIdx(net::Network) = NetworkNegPosIdx([LayerNegPosIdx(L, i) for (i, L) in enumerate(net.layers)])
